@@ -7,6 +7,6 @@ DirectoryIndex index.php
     Header always set Permissions-Policy "geolocation=(), camera=(), microphone=()"
 </IfModule>
 
-<FilesMatch "^(schema\.sql|README\.md)$">
+<FilesMatch "^(schema\.sql|README\.md|Makefile|Dockerfile|compose\.yaml|router\.php)$">
     Require all denied
 </FilesMatch>

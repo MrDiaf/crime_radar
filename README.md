@@ -12,15 +12,21 @@ En Apache/PHP-applikation som hämtar polisrapporterade händelser, arkiverar de
 - Responsiv svensk design för dator och mobil
 - JSON-API med förberedda SQL-frågor
 
-## Snabbstart
+## Snabbstart utan Docker
 
-Du behöver Docker, Docker Compose, `make` och `curl`. Ett enda kommando bygger Apache/PHP-miljön, startar servern och fyller SQLite-databasen med de senaste polishändelserna:
+Installera först Apache, PHP, SQLite-stöd och curl på Ubuntu/Debian:
+
+```bash
+make install-deps
+```
+
+För lokal utveckling startar ett enda kommando PHP-servern, skapar SQLite-databasen och fyller den med de senaste polishändelserna:
 
 ```bash
 make start
 ```
 
-Öppna sedan <http://localhost:8080>. Databasen sparas i Docker-volymen `crime-radar-data` och finns kvar när servern stoppas.
+Öppna sedan <http://localhost:8080>. Databasen sparas i `data/crime_radar.sqlite` och finns kvar när servern stoppas.
 
 Vanliga kommandon:
 
@@ -28,48 +34,40 @@ Vanliga kommandon:
 make import   # hämta nya händelser
 make status   # kontrollera server och antal händelser
 make logs     # följ serverloggen
-make stop     # stoppa men behåll databasen
-make reset    # ta bort server och databas helt
+make down     # stoppa men behåll databasen
+make reset    # stoppa och ta bort databasen
 ```
 
-Kör `make help` för hela listan. Om du inte har `make` går samma uppstart att göra manuellt:
+Kör `make help` för hela listan. Den lokala utvecklingsservern kräver inga root-rättigheter. Manuell start utan `make`:
+
+```bash
+php scripts/import_police_events.php
+php -S 127.0.0.1:8080 -t . router.php
+```
+
+## Kör med systemets Apache
+
+Efter `make install-deps` kan Make konfigurera Apache med projektets aktuella sökväg:
+
+```bash
+make apache-setup
+make apache-start
+```
+
+Öppna sedan <http://localhost/>. Stoppa Apache med `make apache-stop`.
+
+`apache-setup` kräver `sudo`. Den kopierar applikationen till `/var/www/crime-radar`, installerar VirtualHost-konfigurationen i `/etc/apache2` och skapar den skrivbara databaskatalogen `/var/lib/crime-radar`. SQLite-databasen ligger alltså utanför den publika webbrooten.
+
+`data/.htaccess` blockerar nedladdning av databasen från webben.
+
+## Docker (valfritt)
+
+Docker-filerna finns kvar som ett alternativ men krävs inte:
 
 ```bash
 docker compose up -d --build
 docker compose exec -T --user www-data web php scripts/import_police_events.php
 ```
-
-## Installation på Apache
-
-Installera Apache, PHP och nödvändiga PHP-tillägg. På Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install apache2 php libapache2-mod-php php-sqlite3 php-mbstring
-sudo a2enmod headers
-```
-
-Kopiera projektet och skapa en datakatalog som Apache får skriva till:
-
-```bash
-sudo cp -a . /var/www/crime-radar
-sudo install -d -o www-data -g www-data /var/lib/crime-radar
-sudo cp apache/crime-radar.conf /etc/apache2/sites-available/crime-radar.conf
-sudo a2ensite crime-radar.conf
-sudo apache2ctl configtest
-sudo systemctl reload apache2
-```
-
-Exempelkonfigurationen använder `/var/www/crime-radar` som `DocumentRoot` och lagrar databasen i `/var/lib/crime-radar/crime-radar.sqlite`. Ändra sökvägarna i `apache/crime-radar.conf` om projektet placeras någon annanstans.
-
-Om webbhotellet inte tillåter egna VirtualHost-inställningar fungerar standardplatsen `data/crime_radar.sqlite`. Ge då Apache skrivrättighet till enbart `data/`:
-
-```bash
-sudo chown www-data:www-data /var/www/crime-radar/data
-sudo chmod 750 /var/www/crime-radar/data
-```
-
-`data/.htaccess` blockerar nedladdning av databasen, men placering utanför `DocumentRoot` är säkrare i produktion.
 
 ## Hämta och arkivera polishändelser
 
@@ -126,6 +124,7 @@ data/           lokal SQLite-databas (ignoreras av Git)
 Makefile        start-, import- och underhållskommandon
 schema.sql      tabeller och index
 index.php       applikationens gränssnitt
+router.php      skyddar privata filer i den lokala utvecklingsservern
 ```
 
 ## Datakällor och ansvarsfriskrivning
