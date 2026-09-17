@@ -12,16 +12,32 @@ En Apache/PHP-applikation som hämtar polisrapporterade händelser, arkiverar de
 - Responsiv svensk design för dator och mobil
 - JSON-API med förberedda SQL-frågor
 
-## Snabbstart med Docker
+## Snabbstart
 
-Docker-versionen kör Apache och PHP 8.3 med SQLite-stöd.
+Du behöver Docker, Docker Compose, `make` och `curl`. Ett enda kommando bygger Apache/PHP-miljön, startar servern och fyller SQLite-databasen med de senaste polishändelserna:
+
+```bash
+make start
+```
+
+Öppna sedan <http://localhost:8080>. Databasen sparas i Docker-volymen `crime-radar-data` och finns kvar när servern stoppas.
+
+Vanliga kommandon:
+
+```bash
+make import   # hämta nya händelser
+make status   # kontrollera server och antal händelser
+make logs     # följ serverloggen
+make stop     # stoppa men behåll databasen
+make reset    # ta bort server och databas helt
+```
+
+Kör `make help` för hela listan. Om du inte har `make` går samma uppstart att göra manuellt:
 
 ```bash
 docker compose up -d --build
-docker compose exec web php scripts/import_police_events.php
+docker compose exec -T --user www-data web php scripts/import_police_events.php
 ```
-
-Öppna sedan <http://localhost:8080>. Databasen sparas i Docker-volymen `crime-radar-data`.
 
 ## Installation på Apache
 
@@ -107,6 +123,7 @@ includes/       databas- och HTTP-hjälpfunktioner
 scripts/        schemalagda importkommandon
 apache/         exempel på VirtualHost
 data/           lokal SQLite-databas (ignoreras av Git)
+Makefile        start-, import- och underhållskommandon
 schema.sql      tabeller och index
 index.php       applikationens gränssnitt
 ```
