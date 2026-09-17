@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - crime-radar-data:/var/www/html/data
+    restart: unless-stopped
+
+volumes:
+  crime-radar-data:
